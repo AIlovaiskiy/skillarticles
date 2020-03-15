@@ -23,6 +23,7 @@ import kotlinx.android.synthetic.main.search_view_layout.*
 import ru.skillbranch.skillarticles.R
 import ru.skillbranch.skillarticles.extensions.dpToIntPx
 import ru.skillbranch.skillarticles.extensions.setMarginOptionally
+import ru.skillbranch.skillarticles.markdown.MarkdownBuilder
 import ru.skillbranch.skillarticles.ui.base.BaseActivity
 import ru.skillbranch.skillarticles.ui.base.Binding
 import ru.skillbranch.skillarticles.ui.custom.SearchFocusSpan
@@ -165,11 +166,13 @@ class RootActivity : BaseActivity<ArticleViewModel>(), IArticleView {
 
         btn_result_up.setOnClickListener {
             if (search_view.hasFocus()) search_view.clearFocus()
+            if (!tv_text_content.hasFocus()) tv_text_content.requestFocus()
             viewModel.handleUpResult()
         }
 
         btn_result_down.setOnClickListener {
             if (search_view.hasFocus()) search_view.clearFocus()
+            if (!tv_text_content.hasFocus()) tv_text_content.requestFocus()
             viewModel.handleDownResult()
         }
 
@@ -203,7 +206,7 @@ class RootActivity : BaseActivity<ArticleViewModel>(), IArticleView {
         }
 
         tv_text_content.text =
-            if (data.isLoadingContent) "Loading..." else data.content.first() as String
+            if (data.isLoadingContent) "Loading..." else data.content?.first() as String
 
 
         toolbar.title = data.title ?: "Loading..."
@@ -300,7 +303,11 @@ class RootActivity : BaseActivity<ArticleViewModel>(), IArticleView {
         private var searchPosition: Int by ObserveProp(0)
 
         private var content: String by ObserveProp("loading") {
-            tv_text_content.setText(it, TextView.BufferType.SPANNABLE)
+            MarkdownBuilder(this@RootActivity)
+                .markdownToSpan(it)
+                .run {
+                    tv_text_content.setText(it, TextView.BufferType.SPANNABLE)
+                }
             tv_text_content.movementMethod = ScrollingMovementMethod()
         }
 
@@ -334,7 +341,7 @@ class RootActivity : BaseActivity<ArticleViewModel>(), IArticleView {
             if (data.title != null) title = data.title
             if (data.category != null) category = data.category
             if (data.categoryIcon != null) categoryIcon = data.categoryIcon as Int
-            if (data.content.isNotEmpty()) content = data.content.first() as String
+            if (data.content != null) content = data.content
 
             isLoadingContent = data.isLoadingContent
             isSearch = data.isSearch
